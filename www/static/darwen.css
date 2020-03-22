@@ -4,11 +4,21 @@ body {
 }
 
 .content {
-    display: flex;
     height: 100%;
     width: 100%;
-    justify-content: center;
+}
 
+#c1, #c2 {
+    position: fixed;
+    left: 0;
+    top: 0;
+}
+
+#c2 {
+    z-index: 0;
+}
+#c1 {
+    z-index: 100;
 }
 
 #msg {
