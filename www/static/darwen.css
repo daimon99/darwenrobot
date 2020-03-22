@@ -1,31 +1,19 @@
+body {
+    padding: 0;
+    margin: 0;
+}
+
 .content {
-  display: flex;
-  height: 100%;
-  width: 100%;
-  justify-content: center;
+    display: flex;
+    height: 100%;
+    width: 100%;
+    justify-content: center;
+
 }
-.left-content {
-  width: 50%;
+
+#msg {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 9999;
 }
-.right-content {
-  display: flex;
-  flex-direction: column;
-  width: 50%;
-  justify-content: space-around;
-  height: 100%;
-}
-.right-content .up-area {
-  display: flex;
-}
-.right-content .up-area .left-area {
-  width: 50%;
-  text-align: center;
-}
-.right-content .up-area .right-area {
-  width: 50%;
-  text-align: center;
-}
-.right-content .down-area {
-  text-align: center;
-}
-/*# sourceMappingURL=darwen.css.map */
