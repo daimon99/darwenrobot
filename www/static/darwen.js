@@ -27,15 +27,19 @@ window.onload = function () {
     console.log(ctx)
     log('nihao')
 
-    up = {
-        xMin: 0.17,
-        xMax: 0.22,
-        yMin: 0,217,
-        yMax: 0.275
+    let up = {
+        center: [0.196, 0.235],
+        radius: 0.035
     }
-    down = {
+    let down = {
 
     }
+    let left = {}
+    let right = {}
+    let cameraUp = {}
+    let cameraDown = {}
+    let liftUp = {}
+    let liftDown = {}
 }
 
 
