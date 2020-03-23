@@ -20,10 +20,20 @@
         .camera {
             width: 50%;
             height: 100%;
+            display: flex;
+            flex-direction: column;
         }
 
         .camera img {
             width: 100%;
+        }
+
+        .camera input {
+            border: 1px solid;
+        }
+
+        .camera button {
+            border: 1px solid;
         }
 
         .operation {
@@ -37,7 +47,6 @@
             display: flex;
             justify-content: space-around;
             width: 100%;
-            margin: 10px 0 10px 0;
             /*border: 1px solid;*/
         }
 
@@ -48,9 +57,11 @@
         .cell {
             width: 33%;
             text-align: center;
-            border: 1px solid;
-            padding: 10px;
             user-select: none;
+        }
+
+        .selected {
+            background-color: #CCCCCC;
         }
 
         #msg {
@@ -67,6 +78,10 @@
 <div class="content">
     <div class="camera">
         <img alt="监控" src="vectorImage" id="vectorImageId">
+        <div class="row" style="">
+            <input type="text" placeholder="说话" value="先生您好，我是戴成功，请问您有什么需要？" id="textEntered" style="flex-grow: 1">
+            <button onclick="say()">说话</button>
+        </div>
     </div>
     <div class="operation" id="operation">
         <div class="row">
@@ -89,105 +104,141 @@
         </div>
         <div class="space"></div>
         <div class="row">
-            <div class="cell" id="slow">减速</div>
-            <div class="cell" id="forward">前进</div>
             <div class="cell" id="acc">加速</div>
+            <div class="cell"></div>
+            <div class="cell" id="forward">前进</div>
+            <div class="cell"></div>
+
         </div>
         <div class="row">
+            <div class="cell"></div>
             <div class="cell" id="left">左转</div>
-            <div class="cell" id="backward">后退</div>
+            <div class="cell"></div>
             <div class="cell" id="right">右转</div>
+
+        </div>
+        <div class="row">
+            <div class="cell" id="slow">减速</div>
+            <div class="cell"></div>
+            <div class="cell" id="backward">后退</div>
+            <div class="cell"></div>
         </div>
     </div>
 </div>
 </body>
 <script>
-  var timer = {}
+    var timer = {}
 
-  function log(msg) {
-    let msgEle = document.getElementById('msg')
-    msgEle.innerText = msg
-    setTimeout(function () {
-      msgEle.innerText = '等待命令'
-    }, 3000)
-  }
-
-  function init() {
-    let operation = document.getElementById('operation')
-    operation.addEventListener('touchstart', function (e) {
-      e.preventDefault()
-      // console.log(e)
-      doAction(e.type, e.target.id)
-    })
-    operation.addEventListener('touchend', function (e) {
-      e.preventDefault()
-      // console.log(e)
-      doAction(e.type, e.target.id)
-    })
-
-  }
-
-  /**
-   * 执行动作
-   * @param type 用户操作
-   * @param id 动作id
-   */
-  function doAction(type, id) {
-    switch (id) {
-      case 'forward':
-        doIt(type, 'W')
-        break;
-      case 'backward':
-        doIt(type, 'S')
-        break;
-      case 'left':
-        doIt(type, 'A')
-        break;
-      case 'right':
-        doIt(type, 'D')
-        break;
-      case 'head-up':
-        doIt(type, 'T')
-        break;
-      case 'head-down':
-        doIt(type, 'G')
-        break;
-      case 'lift-up':
-        doIt(type, 'R')
-        break;
-      case 'lift-down':
-        doIt(type, 'F')
-        break;
-      case 'acc':
-        doIt(type, doAccl)
-        break;
-      case 'slow':
-        doIt(type, doSlow)
-        break;
+    var options = {
+        acc: false,
+        slow: false,
     }
-  }
 
-  function doIt(type, keyCode) {
-    keyCode = keyCode.charCodeAt(0)
-    let hasShift = false
-    let hasCtrl = false
-    let hasAlt = false
-    if (type === 'touchstart') {
-      postHttpRequest('keydown', {keyCode, hasShift, hasCtrl, hasAlt})
-    } else if (type === 'touchend') {
-      postHttpRequest('keyup', {keyCode, hasShift, hasCtrl, hasAlt})
+    var eleAcc = document.getElementById('acc');
+    var eleSlow = document.getElementById('slow');
+
+    function log(msg) {
+        let msgEle = document.getElementById('msg');
+        msgEle.innerText = msg;
+        setTimeout(function () {
+            msgEle.innerText = '等待命令'
+        }, 3000)
     }
-  }
 
-  function postHttpRequest(url, dataSet) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", url, true);
-    xhr.send(JSON.stringify(dataSet));
-  }
+    function init() {
+        let operation = document.getElementById('operation');
+        operation.addEventListener('touchstart', function (e) {
+            e.preventDefault();
+            doAction(e.type, e.target.id);
+        });
+        operation.addEventListener('touchend', function (e) {
+            e.preventDefault();
+            doAction(e.type, e.target.id);
+        });
 
-  window.onload = function () {
-    init()
-  }
+    }
+
+    /**
+     * 执行动作
+     * @param type 用户操作
+     * @param id 动作id
+     */
+    function doAction(type, id) {
+        switch (id) {
+            case 'forward':
+                doIt(type, 'W');
+                break;
+            case 'backward':
+                doIt(type, 'S');
+                break;
+            case 'left':
+                doIt(type, 'A');
+                break;
+            case 'right':
+                doIt(type, 'D');
+                break;
+            case 'head-up':
+                doIt(type, 'T');
+                break;
+            case 'head-down':
+                doIt(type, 'G');
+                break;
+            case 'lift-up':
+                doIt(type, 'R');
+                break;
+            case 'lift-down':
+                doIt(type, 'F');
+                break;
+            case 'acc':
+                if (type === 'touchstart') {
+                    options.acc = !options.acc;
+                    setState(eleAcc, options.acc);
+                }
+                break;
+            case 'slow':
+                if (type === 'touchstart') {
+                    options.slow = !options.slow;
+                    setState(eleSlow, options.slow);
+                }
+                break;
+        }
+    }
+
+    function setState(element, selected) {
+        if (selected) {
+            element.classList.add('selected');
+        } else {
+            element.classList.remove('selected');
+        }
+    }
+
+    function doIt(type, keyCode) {
+        keyCode = keyCode.charCodeAt(0)
+        let hasShift = options.acc
+        let hasCtrl = false
+        let hasAlt = options.slow
+        if (type === 'touchstart') {
+            postHttpRequest('keydown', {keyCode, hasShift, hasCtrl, hasAlt})
+        } else if (type === 'touchend') {
+            postHttpRequest('keyup', {keyCode, hasShift, hasCtrl, hasAlt})
+        }
+    }
+
+    function say() {
+        let textEntered = document.getElementById('textEntered').value
+        postHttpRequest('tts', {textEntered})
+    }
+
+    function postHttpRequest(url, dataSet) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", url, true);
+        xhr.send(JSON.stringify(dataSet));
+    }
+
+
+    window.onload = function () {
+        init()
+    }
 
 </script>
 </html>

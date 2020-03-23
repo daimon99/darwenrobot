@@ -79,34 +79,6 @@ class DebugAnnotations(Enum):
     ENABLED_ALL = 2
 
 
-# Annotator for displaying RobotState (position, etc.) on top of the camera feed
-class RobotStateDisplay(annotate.Annotator):
-    def apply(self, image, scale):
-        d = ImageDraw.Draw(image)
-
-        bounds = [3, 0, image.width, image.height]
-
-        def print_line(text_line):
-            text = annotate.ImageText(text_line, position=annotate.AnnotationPosition.TOP_LEFT, outline_color='black',
-                                      color='lightblue')
-            text.render(d, bounds)
-            TEXT_HEIGHT = 11
-            bounds[1] += TEXT_HEIGHT
-
-        robot = self.world.robot  # type: robot.Robot
-
-        # Display the Pose info for the robot
-        pose = robot.pose
-        print_line('Pose: Pos = <%.1f, %.1f, %.1f>' % pose.position.x_y_z)
-        print_line('Pose: Rot quat = <%.1f, %.1f, %.1f, %.1f>' % pose.rotation.q0_q1_q2_q3)
-        print_line('Pose: angle_z = %.1f' % pose.rotation.angle_z.degrees)
-        print_line('Pose: origin_id: %s' % pose.origin_id)
-
-        # Display the Accelerometer and Gyro data for the robot
-        print_line('Accelmtr: <%.1f, %.1f, %.1f>' % robot.accel.x_y_z)
-        print_line('Gyro: <%.1f, %.1f, %.1f>' % robot.gyro.x_y_z)
-
-
 class RemoteControlVector:
 
     def __init__(self, robot):
@@ -132,59 +104,8 @@ class RemoteControlVector:
         self.is_mouse_look_enabled = _is_mouse_look_enabled_by_default
         self.mouse_dir = 0
 
-        all_anim_names = self.vector.anim.anim_list
-        all_anim_names.sort()
-        self.anim_names = []
-
-        # Hide a few specific test animations that don't behave well
-        bad_anim_names = [
-            "ANIMATION_TEST",
-            "soundTestAnim"]
-
-        for anim_name in all_anim_names:
-            if anim_name not in bad_anim_names:
-                self.anim_names.append(anim_name)
-
-        default_anims_for_keys = ["anim_turn_left_01",  # 0
-                                  "anim_blackjack_victorwin_01",  # 1
-                                  "anim_pounce_success_02",  # 2
-                                  "anim_feedback_shutup_01",  # 3
-                                  "anim_knowledgegraph_success_01",  # 4
-                                  "anim_wakeword_groggyeyes_listenloop_01",  # 5
-                                  "anim_fistbump_success_01",  # 6
-                                  "anim_reacttoface_unidentified_01",  # 7
-                                  "anim_rtpickup_loop_10",  # 8
-                                  "anim_volume_stage_05"]  # 9
-
-        self.anim_index_for_key = [0] * 10
-        kI = 0
-        for default_key in default_anims_for_keys:
-            try:
-                anim_idx = self.anim_names.index(default_key)
-            except ValueError:
-                print("Error: default_anim %s is not in the list of animations" % default_key)
-                anim_idx = kI
-            self.anim_index_for_key[kI] = anim_idx
-            kI += 1
-
-        all_anim_trigger_names = self.vector.anim.anim_trigger_list
-        self.anim_trigger_names = []
-
-        bad_anim_trigger_names = [
-            "InvalidAnimTrigger",
-            "UnitTestAnim"]
-
-        for anim_trigger_name in all_anim_trigger_names:
-            if anim_trigger_name not in bad_anim_trigger_names:
-                self.anim_trigger_names.append(anim_trigger_name)
-
-        self.selected_anim_trigger_name = self.anim_trigger_names[0]
-
         self.action_queue = []
         self.text_to_say = "Hi I'm Vector"
-
-    def set_anim(self, key_index, anim_index):
-        self.anim_index_for_key[key_index] = anim_index
 
     def handle_mouse(self, mouse_x, mouse_y):
         """Called whenever mouse moves
@@ -422,6 +343,14 @@ def handle_vectorImage():
     return flask_helpers.stream_video(streaming_video)
 
 
+@flask_app.route('/tts', methods=['POST'])
+def http_tts():
+    message = json.loads(request.data.decode("utf-8"))
+    if flask_app.remote_control_vector:
+        flask_app.remote_control_vector.vector.audio.stream_wav_file(tts(message['textEntered']))
+    return ""
+
+
 def handle_key_event(key_request, is_key_down):
     message = json.loads(key_request.data.decode("utf-8"))
     if flask_app.remote_control_vector:
@@ -516,7 +445,7 @@ def handle_sayText():
     """Called from Javascript whenever the saytext text field is modified"""
     message = json.loads(request.data.decode("utf-8"))
     if flask_app.remote_control_vector:
-        flask_app.remote_control_vector.text_to_say = message['textEntered']
+        flask_app.remote_control_vector.text_to_say = message['text']
     return ""
 
 
@@ -535,6 +464,23 @@ def handle_updateVector():
     return ""
 
 
+def tts(text):
+    print('tts', text)
+    import requests
+    import tempfile
+    import pydub
+    url = 'https://tts.taijihuabao.com/api/v1/ai/tts/'
+    headers = {'Authorization': f'Bearer <KEY>'}
+    payload = {'text': text, 'voice_name': 2, 'param_name': 'auto', 'audio_format': 'mp3'}
+    response = requests.post(url, headers=headers, json=payload)
+    temp_mp3 = tempfile.mktemp(suffix='.mp3')
+    with open(temp_mp3, 'wb') as fout:
+        fout.write(response.content)
+    temp_wav = tempfile.mktemp(suffix='.wav')
+    pydub.AudioSegment.from_mp3(temp_mp3).apply_gain(15).export(temp_wav, format='wav')
+    return temp_wav
+
+
 def run():
     args = util.parse_command_args()
 
@@ -544,7 +490,6 @@ def run():
 
         robot.camera.init_camera_feed()
         robot.behavior.drive_off_charger()
-        robot.camera.image_annotator.add_annotator('robotState', RobotStateDisplay)
 
         flask_helpers.run_flask(flask_app, '0.0.0.0', '80')
 

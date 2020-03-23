@@ -55,7 +55,7 @@ def _delayed_open_web_browser(url, delay, new=0, autoraise=True, specific_browse
 
 
 def run_flask(flask_app, host_ip="127.0.0.1", host_port=5000, enable_flask_logging=False,
-              open_page=True, open_page_delay=1.0):
+              open_page=True, open_page_delay=1.0, extra_files=None):
     """
     Run the Flask webserver on specified host and port
     optionally also open that same host:port page in your browser to connect
@@ -71,7 +71,7 @@ def run_flask(flask_app, host_ip="127.0.0.1", host_port=5000, enable_flask_loggi
         # before the webpage requests any data
         _delayed_open_web_browser("http://" + host_ip + ":" + str(host_port), delay=open_page_delay)
 
-    flask_app.run(host=host_ip, port=host_port, use_evalex=False, threaded=True)
+    flask_app.run(host=host_ip, port=host_port, use_evalex=False, threaded=True, extra_files=extra_files)
 
 
 def shutdown_flask(request):
