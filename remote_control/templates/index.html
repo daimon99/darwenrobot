@@ -135,30 +135,30 @@
   function doAction(type, id) {
     switch (id) {
       case 'forward':
-        doIt(type, doForward)
+        doIt(type, 'W')
         break;
       case 'backward':
-        doIt(type, doBackward)
+        doIt(type, 'S')
         break;
       case 'left':
-        doIt(type, doLeft)
+        doIt(type, 'A')
         break;
       case 'right':
-        doIt(type, doRight)
+        doIt(type, 'D')
         break;
       case 'head-up':
-        doIt(type, doHeadUp)
+        doIt(type, 'T')
         break;
       case 'head-down':
-        doIt(type, doHeadDown)
+        doIt(type, 'G')
         break;
       case 'lift-up':
-        doIt(type, doLiftUp)
+        doIt(type, 'R')
         break;
       case 'lift-down':
-        doIt(type, doLiftDown)
+        doIt(type, 'F')
         break;
-      case 'accl':
+      case 'acc':
         doIt(type, doAccl)
         break;
       case 'slow':
@@ -167,54 +167,22 @@
     }
   }
 
-  function doIt(type, func, interval = 100) {
+  function doIt(type, keyCode) {
+    keyCode = keyCode.charCodeAt(0)
+    let hasShift = false
+    let hasCtrl = false
+    let hasAlt = false
     if (type === 'touchstart') {
-      console.log('clear interval', func, timer[func])
-      clearInterval(timer[func])
-      timer[func] = setInterval(func, interval)
+      postHttpRequest('keydown', {keyCode, hasShift, hasCtrl, hasAlt})
     } else if (type === 'touchend') {
-      clearInterval(timer[func])
+      postHttpRequest('keyup', {keyCode, hasShift, hasCtrl, hasAlt})
     }
   }
 
-  function doForward() {
-    log('前进')
-  }
-
-  function doBackward() {
-    log('后退')
-  }
-
-  function doLeft() {
-    log('左转')
-  }
-
-  function doRight() {
-    log('右转')
-  }
-
-  function doAccl() {
-    log('加速')
-  }
-
-  function doSlow() {
-    log('减速')
-  }
-
-  function doHeadUp() {
-    log("抬头")
-  }
-
-  function doHeadDown() {
-    log('低头')
-  }
-
-  function doLiftUp() {
-    log("举手")
-  }
-
-  function doLiftDown() {
-    log("落手")
+  function postHttpRequest(url, dataSet) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", url, true);
+    xhr.send(JSON.stringify(dataSet));
   }
 
   window.onload = function () {
